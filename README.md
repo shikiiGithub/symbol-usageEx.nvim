@@ -1,6 +1,8 @@
-# symbol-usage.nvim
+# symbol-usageEx.nvim
 
-Plugin to display references, definitions, implementations, <mark>git info</mark>(only in Bubbles style  ) of document symbols with a view like JetBrains Idea.
+Fork From https://github.com/Wansmer/symbol-usage.nvim 。
+
+This plugin to display references, definitions, implementations, <mark>git info</mark>(only in Bubbles style  ) of document symbols with a view like JetBrains Idea.
 
 <!--toc:start-->
 
@@ -196,31 +198,28 @@ require('symbol-usage').setup({
 ```lua
 return {
   {
-    "shikiiGithub/symbol-usageEx.nvim",
+    "Wansmer/symbol-usage.nvim",
     event = "BufReadPre",
     config = function()
       local function h(name)
         return vim.api.nvim_get_hl(0, { name = name })
       end
 
-      -- hl-groups can have any name
       vim.api.nvim_set_hl(0, "SymbolUsageRounding", { fg = h("CursorLine").bg, italic = true })
       vim.api.nvim_set_hl(0, "SymbolUsageContent", { bg = h("CursorLine").bg, fg = h("Comment").fg, italic = true })
       vim.api.nvim_set_hl(0, "SymbolUsageRef", { fg = h("Function").fg, bg = h("CursorLine").bg, italic = true })
       vim.api.nvim_set_hl(0, "SymbolUsageDef", { fg = h("Type").fg, bg = h("CursorLine").bg, italic = true })
       vim.api.nvim_set_hl(0, "SymbolUsageImpl", { fg = h("@keyword").fg, bg = h("CursorLine").bg, italic = true })
-      -- Git 信息高亮（和引用保持同色系或你自己喜欢的颜色）
       vim.api.nvim_set_hl(0, "SymbolUsageGit", { fg = "#e06c75", bg = h("CursorLine").bg, italic = true })
+
       local function text_format(symbol)
         local res = {}
 
         local round_start = { "", "SymbolUsageRounding" }
         local round_end = { "", "SymbolUsageRounding" }
 
-        -- Indicator that shows if there are any other symbols in the same line
         local stacked_functions_content = symbol.stacked_count > 0 and ("+%s"):format(symbol.stacked_count) or ""
 
-        -- References
         if symbol.references then
           local usage = symbol.references <= 1 and "个引用" or "个引用"
           local num = symbol.references == 0 and "0" or symbol.references
@@ -230,7 +229,6 @@ return {
           table.insert(res, round_end)
         end
 
-        -- Definitions
         if symbol.definition then
           if #res > 0 then
             table.insert(res, { " ", "NonText" })
@@ -241,7 +239,6 @@ return {
           table.insert(res, round_end)
         end
 
-        -- Implementations
         if symbol.implementation then
           if #res > 0 then
             table.insert(res, { " ", "NonText" })
@@ -252,21 +249,23 @@ return {
           table.insert(res, round_end)
         end
 
-        -- Git 提交者 & 时间（新增，放在 implementation 之后）
-        if symbol.git_author and symbol.git_days_ago ~= nil then
+        if symbol.git_author then
           if #res > 0 then
             table.insert(res, { " ", "NonText" })
           end
           local time_str = symbol.git_days_ago == 0 and "今天"
-            or symbol.git_days_ago == 1 and "1 天前 "
-            or symbol.git_days_ago .. " 天前"
+            or symbol.git_days_ago == 1 and "1天前"
+            or (symbol.git_days_ago and symbol.git_days_ago .. "天前" or "?")
+          local git_text = symbol.git_author .. "（" .. time_str .. "）"
+          if symbol.git_summary and symbol.git_summary ~= "" then
+            git_text = git_text .. " - " .. symbol.git_summary
+          end
           table.insert(res, round_start)
           table.insert(res, { "󰊢 ", "SymbolUsageGit" })
-          table.insert(res, { symbol.git_author .. " (" .. time_str .. ")", "SymbolUsageContent" })
+          table.insert(res, { git_text, "SymbolUsageContent" })
           table.insert(res, round_end)
         end
 
-        -- Stacked symbols
         if stacked_functions_content ~= "" then
           if #res > 0 then
             table.insert(res, { " ", "NonText" })
@@ -282,7 +281,7 @@ return {
 
       require("symbol-usage").setup({
         text_format = text_format,
-        git = { enabled = true },
+        git = { enabled = true, show_summary = false }, -- 关闭 summary 显示
       })
     end,
   },
