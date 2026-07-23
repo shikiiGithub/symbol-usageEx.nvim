@@ -59,7 +59,7 @@ Default options values:
 local SymbolKind = vim.lsp.protocol.SymbolKind
 
 ---@type UserOpts
-require('symbol-usage').setup({
+require('symbol-usageEx').setup({
   ---@type table<string, any> `nvim_set_hl`-like options for highlight virtual text
   hl = { link = 'Comment' },
   ---@type lsp.SymbolKind[] Symbol kinds what need to be count (see `lsp.SymbolKind`)
@@ -180,7 +180,7 @@ local function text_format(symbol)
   return table.concat(fragments, ', ') .. stacked_functions
 end
 
-require('symbol-usage').setup({
+require('symbol-usageEx').setup({
   text_format = text_format,
 })
 ```
@@ -198,7 +198,7 @@ require('symbol-usage').setup({
 ```lua
 return {
   {
-    "Wansmer/symbol-usage.nvim",
+    "shikiiGithub/symbol-usageEx.nvim",
     event = "BufReadPre",
     config = function()
       local function h(name)
@@ -279,7 +279,7 @@ return {
         return res
       end
 
-      require("symbol-usage").setup({
+      require("symbol-usageEx.nvim").setup({
         text_format = text_format,
         git = { enabled = true, show_summary = false }, -- 关闭 summary 显示
       })
@@ -354,7 +354,7 @@ local function text_format(symbol)
   return res
 end
 
-require('symbol-usage').setup({
+require('symbol-usageEx.nvim').setup({
   text_format = text_format,
 })
 ```
@@ -401,13 +401,13 @@ Setup `symbol-usage`:
 ```lua
 ---Setup `symbol-usage`
 ---@param opts UserOpts
-require('symbol-usage').setup(opts)
+require('symbol-usageEx.nvim').setup(opts)
 ```
 
 Toggle virtual text for current buffer:
 
 ```lua
-require('symbol-usage').toggle()
+require('symbol-usageEx.nvim').toggle()
 ```
 
 Toggle virtual text for all buffers:
@@ -416,13 +416,13 @@ Toggle virtual text for all buffers:
 
 ```lua
 ---@return boolean True if active, false otherwise
-require('symbol-usage').toggle_globally()
+require('symbol-usageEx.nvim').toggle_globally()
 ```
 
 Refresh current buffer:
 
 ```lua
-require('symbol-usage').refresh()
+require('symbol-usageEx.nvim').refresh()
 ```
 
 ## TODO
