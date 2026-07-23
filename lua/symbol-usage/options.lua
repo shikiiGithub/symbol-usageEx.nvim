@@ -33,7 +33,7 @@ local SymbolKind = vim.lsp.protocol.SymbolKind
 ---@field filetypes UserOpts[] To override opts for specific filetypes. Missing field came from common opts
 ---@field log LoggerConfig
 ---@field symbol_filter? fun(ctx: lsp.HandlerContext):(fun(symbol: lsp.Location): boolean)
----@field git? { enabled: boolean } Git blame options
+---@field git? { enabled: boolean, show_summary: boolean } Git blame options
 
 local S = {}
 
@@ -47,7 +47,6 @@ S._default_opts = {
   text_format = function(symbol)
     local fragments = {}
 
-    -- Indicator that shows if there are any other symbols in the same line
     local stacked_functions = (symbol.stacked_count > 0) and (' | +%s'):format(symbol.stacked_count) or ''
 
     if symbol.references then
@@ -81,13 +80,12 @@ S._default_opts = {
   },
   log = { enabled = false },
   symbol_filter = nil,
-  git = { enabled = true },
+  git = { enabled = true, show_summary = true },
 }
 
 S.opts = {}
 
 function S.update(user_opts)
-  -- To avoid merging with link
   local hl = user_opts.hl
   S.opts = vim.tbl_deep_extend('force', S._default_opts, user_opts)
   if not hl then
@@ -95,19 +93,23 @@ function S.update(user_opts)
   end
   vim.api.nvim_set_hl(0, 'SymbolUsageText', hl --[[@as vim.api.keyset.highlight]])
 
-  -- 注册 Git 高亮组，default=true 不覆盖用户已有设置
+  vim.api.nvim_set_hl(0, 'SymbolUsageRef', { link = 'SymbolUsageText', default = true })
+  vim.api.nvim_set_hl(0, 'SymbolUsageDef', { link = 'SymbolUsageText', default = true })
+  vim.api.nvim_set_hl(0, 'SymbolUsageImpl', { link = 'SymbolUsageText', default = true })
   vim.api.nvim_set_hl(0, 'SymbolUsageGit', { link = 'SymbolUsageText', default = true })
 
-  -- so the hl persists across color scheme changes
   vim.api.nvim_create_autocmd('ColorScheme', {
     callback = function()
       vim.api.nvim_set_hl(0, 'SymbolUsageText', hl --[[@as vim.api.keyset.highlight]])
+      vim.api.nvim_set_hl(0, 'SymbolUsageRef', { link = 'SymbolUsageText', default = true })
+      vim.api.nvim_set_hl(0, 'SymbolUsageDef', { link = 'SymbolUsageText', default = true })
+      vim.api.nvim_set_hl(0, 'SymbolUsageImpl', { link = 'SymbolUsageText', default = true })
       vim.api.nvim_set_hl(0, 'SymbolUsageGit', { link = 'SymbolUsageText', default = true })
     end,
   })
 end
 
----Get opts for filetypes if exists or return default options
+---Get opts for filetype if exists or return default options
 ---@param bufnr integer Buffer id
 ---@return UserOpts
 function S.get_ft_or_default(bufnr)

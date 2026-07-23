@@ -23,6 +23,7 @@ local ns = u.NS
 ---@field version? integer LSP version
 ---@field git_author? string
 ---@field git_days_ago? integer
+---@field git_summary? string
 
 ---@class Worker
 ---@field bufnr number Buffer id
@@ -222,6 +223,9 @@ function W:collect_symbols(symbol_tree)
           if info then
             symbol_data.git_author = info.author
             symbol_data.git_days_ago = info.days_ago
+            if self.opts.git.show_summary then
+              symbol_data.git_summary = info.summary
+            end
           end
         end
 
@@ -277,8 +281,7 @@ function W:set_extmark(symbol_id, line, count, id)
     if count then
       data = vim.tbl_deep_extend('force', data, count)
       text = self.opts.text_format(data)
-    elseif data.is_rendered then
-      -- 已渲染过，基于当前完整数据重新格式化（如 Git 数据异步到达后的刷新）
+    elseif data.is_rendered or data.git_author ~= nil then
       text = self.opts.text_format(data)
     end
   end
@@ -367,6 +370,9 @@ function W:refresh_git_extmarks()
         if info then
           symbol.git_author = info.author
           symbol.git_days_ago = info.days_ago
+          if self.opts.git.show_summary then
+            symbol.git_summary = info.summary
+          end
           self:set_extmark(symbol_id, pos.line, nil, symbol.mark_id)
         end
       end

@@ -1,6 +1,6 @@
 local M = {}
 
--- cache[bufnr] = { tick = integer, data = { [line] = { author = string, days_ago = integer } } }
+-- cache[bufnr] = { tick = integer, data = { [line] = { author = string, days_ago = integer, summary = string } } }
 local cache = {}
 -- pending[bufnr] = { callback1, callback2, ... }
 local pending = {}
@@ -15,7 +15,7 @@ end
 ---Get git info for a line from cache
 ---@param bufnr integer
 ---@param line integer 0-based line number
----@return { author: string, days_ago: integer }|nil
+---@return { author: string, days_ago: integer, summary: string }|nil
 function M.get_line_info(bufnr, line)
   local c = cache[bufnr]
   if not c then
@@ -35,7 +35,7 @@ function M.is_cache_valid(bufnr)
   return c.tick == vim.api.nvim_buf_get_changedtick(bufnr)
 end
 
----Parse git blame --porcelain output
+---Parse git blame --line-porcelain output
 ---@param lines string[]
 ---@return table
 function M._parse_porcelain(lines)
@@ -53,17 +53,21 @@ function M._parse_porcelain(lines)
         result[line_num - 1] = {
           author = current.author,
           days_ago = days_ago,
+          summary = current.summary or '',
         }
       end
-      current = {}
     else
       local author = line:match('^author (.+)$')
       local author_time = line:match('^author%-time (%d+)$')
+      local summary = line:match('^summary (.+)$')
       if author then
         current.author = author
       end
       if author_time then
         current.author_time = tonumber(author_time)
+      end
+      if summary then
+        current.summary = summary
       end
     end
   end
@@ -93,7 +97,7 @@ function M.fetch_async(bufnr, callback)
 
   local git_dir = vim.fn.fnamemodify(filepath, ':h')
   local filename = vim.fn.fnamemodify(filepath, ':t')
-  local cmd = { 'git', '-C', git_dir, 'blame', '--porcelain', '--', filename }
+  local cmd = { 'git', '-C', git_dir, 'blame', '--line-porcelain', '--', filename }
 
   pending[bufnr] = { callback }
   local stdout_lines = {}
